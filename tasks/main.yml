@@ -1,0 +1,15 @@
+---
+
+- name: Set day stamp
+  set_fact:
+    day_stamp: "{{ lookup('pipe', 'date +%Y%m%d') }}"
+
+- name: Ensure backup_dir exists
+  file:
+    path: "{{ backup_dir }}"
+    state: directory
+
+- name: Docker
+  include_tasks: docker.yml
+  when: (backup_docker is mapping) and (backup_docker|length > 0)
+  tags: docker
