@@ -4,27 +4,23 @@
   tempfile:
     state: directory
   register: temp_dir
-  tags: docker
 
 - name: Backup Docker volumes
   shell:
     cmd: "docker run --rm --volumes-from {{ item.key }} -v {{ temp_dir.path }}:/backup ubuntu tar czf /backup/{{ item.key }}.tar.gz {{ item.value }}"
   with_dict: "{{ backup_docker }}"
   when: temp_dir.path is defined
-  tags: docker
 
 - name: Fetch Docker backups
   fetch:
-    src: "{{ temp_dir.path }}/{{ item.key }}.tar.gz"
-    dest: "{{ backup_dir }}/{{ day_stamp }}/{{ inventory_hostname }}/docker/{{ item.key }}.tar.gz"
+    src: "{{ (temp_dir.path, item.key) | join('/') }}.tar.gz"
+    dest: "{{ (backup_dir, day_stamp, inventory_hostname, 'docker', item.key) | join('/') }}.tar.gz"
     flat: yes
   with_dict: "{{ backup_docker }}"
   when: temp_dir.path is defined
-  tags: docker
 
 - name: Clean temporary directory
   file:
     path: "{{ temp_dir.path }}"
     state: absent
   when: temp_dir.path is defined
-  tags: docker
