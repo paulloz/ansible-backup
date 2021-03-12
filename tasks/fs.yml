@@ -1,0 +1,27 @@
+---
+
+- name: Create a temporary directory
+  tempfile:
+    state: directory
+  register: temp_dir
+
+- name: Backup fs
+  shell:
+    cmd: "tar czf {{(temp_dir.path, item.key) | join('/') }}.tar.gz {{ item.value | join(' ') }}"
+    warn: no
+  with_dict: "{{ backup_fs }}"
+  when: temp_dir.path is defined
+
+- name: Fetch fs backup
+  fetch:
+    src: "{{ (temp_dir.path, item.key) | join('/') }}.tar.gz"
+    dest: "{{ (backup_dir, day_stamp, inventory_hostname, item.key) | join('/') }}.tar.gz"
+    flat: yes
+  with_dict: "{{ backup_fs }}"
+  when: temp_dir.path is defined
+
+- name: Clean temporary dir
+  file:
+    path: "{{ temp_dir.path }}"
+    state: absent
+  when: temp_dir.path is defined
