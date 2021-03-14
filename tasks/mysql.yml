@@ -1,0 +1,18 @@
+---
+
+- name: Ensure backup dir exists
+  file:
+    path: "{{ (backup_dir, day_stamp, inventory_hostname, 'mysql') | join('/') }}"
+    state: directory
+  delegate_to: localhost
+
+- name: Dump MySQL databases
+  mysql_db:
+    name: "{{ item }}"
+    target: "{{ (backup_dir, day_stamp, inventory_hostname, 'mysql', item) | join('/') }}.sql.gz"
+    state: dump
+    login_host: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    login_port: "{{ backup_mysql_port }}"
+    login_user: "{{ backup_mysql_user }}"
+    login_password: "{{ backup_mysql_password }}"
+  with_list: "{{ (backup_mysql is string) | ternary([backup_mysql], backup_mysql) }}"

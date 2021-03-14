@@ -1,4 +1,12 @@
 ---
 
 backup_dir: /srv/backup
+
 backup_docker:
+
+backup_fs:
+
+backup_mysql:
+backup_mysql_port: 3306
+backup_mysql_user: "root"
+backup_mysql_password: ""

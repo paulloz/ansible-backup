@@ -16,6 +16,10 @@ A simple ansible role to backup a couple of things:
       backup_name:
         - /directory/to/backup
         - /other/directory/to/backup
+    backup_mysql: database_name  # this could also be a list
+    backup_mysql_port: 3306
+    backup_mysql_user: mysql_user
+    backup_mysql_password: mysql_password  # please use your vault
   roles:
     - ansible-backup
 ```
