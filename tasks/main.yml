@@ -23,7 +23,7 @@
 - block:
     - name: MySQL
       include_tasks: mysql.yml
-      when: backup_mysql | length > 0
+      when: (backup_mysql is sequence) and (backup_mysql is not mapping) and (backup_mysql | length > 0
       tags: mysql
   rescue:
     - include_tasks: rescue.yml
