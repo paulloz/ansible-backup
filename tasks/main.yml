@@ -4,17 +4,26 @@
   set_fact:
     day_stamp: "{{ lookup('pipe', 'date +%Y%m%d') }}"
 
-- name: Docker
-  include_tasks: docker.yml
-  when: (backup_docker is mapping) and (backup_docker | length > 0)
-  tags: docker
+- block:
+    - name: Docker
+      include_tasks: docker.yml
+      when: (backup_docker is mapping) and (backup_docker | length > 0)
+      tags: docker
+  rescue:
+    - include_tasks: rescue.yml
 
-- name: Fs
-  include_tasks: fs.yml
-  when: (backup_fs is mapping) and (backup_fs | length > 0)
-  tags: fs
+- block:
+    - name: Fs
+      include_tasks: fs.yml
+      when: (backup_fs is mapping) and (backup_fs | length > 0)
+      tags: fs
+  rescue:
+    - include_tasks: rescue.yml
 
-- name: MySQL
-  include_tasks: mysql.yml
-  when: backup_mysql | length > 0
-  tags: mysql
+- block:
+    - name: MySQL
+      include_tasks: mysql.yml
+      when: backup_mysql | length > 0
+      tags: mysql
+  rescue:
+    - include_tasks: rescue.yml

@@ -1,0 +1,7 @@
+---
+
+- name: Rescue from failure
+  # TODO: Send a mail
+  debug:
+    msg: "{{ ansible_failed_task.name }}: {{ ansible_failed_result.msg }}"
+  when: False

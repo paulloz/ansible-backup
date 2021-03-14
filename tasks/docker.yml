@@ -1,26 +1,28 @@
 ---
 
-- name: Create a temporary directory
-  tempfile:
-    state: directory
-  register: temp_dir
+- block:
+    - name: Create a temporary directory
+      tempfile:
+        state: directory
+      register: temp_dir
 
-- name: Backup Docker volumes
-  shell:
-    cmd: "docker run --rm --volumes-from {{ item.key }} -v {{ temp_dir.path }}:/backup ubuntu tar czf /backup/{{ item.key }}.tar.gz {{ item.value }}"
-  with_dict: "{{ backup_docker }}"
-  when: temp_dir.path is defined
+    - name: Backup Docker volumes
+      shell:
+        cmd: "docker run --rm --volumes-from {{ item.key }} -v {{ temp_dir.path }}:/backup ubuntu tar czf /backup/{{ item.key }}.tar.gz {{ item.value }}"
+      with_dict: "{{ backup_docker }}"
+      when: temp_dir.path is defined
 
-- name: Fetch Docker backups
-  fetch:
-    src: "{{ (temp_dir.path, item.key) | join('/') }}.tar.gz"
-    dest: "{{ (backup_dir, day_stamp, inventory_hostname, 'docker', item.key) | join('/') }}.tar.gz"
-    flat: yes
-  with_dict: "{{ backup_docker }}"
-  when: temp_dir.path is defined
+    - name: Fetch Docker backups
+      fetch:
+        src: "{{ (temp_dir.path, item.key) | join('/') }}.tar.gz"
+        dest: "{{ (backup_dir, day_stamp, inventory_hostname, 'docker', item.key) | join('/') }}.tar.gz"
+        flat: yes
+      with_dict: "{{ backup_docker }}"
+      when: temp_dir.path is defined
 
-- name: Clean temporary directory
-  file:
-    path: "{{ temp_dir.path }}"
-    state: absent
-  when: temp_dir.path is defined
+  always:
+    - name: Clean temporary directory
+      file:
+        path: "{{ temp_dir.path }}"
+        state: absent
+      when: temp_dir.path is defined
