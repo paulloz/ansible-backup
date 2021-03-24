@@ -1,18 +1,34 @@
 ---
 
-- name: Ensure backup dir exists
-  file:
-    path: "{{ (backup_dir, day_stamp, inventory_hostname, 'mysql') | join('/') }}"
-    state: directory
-  delegate_to: localhost
+- block:
+  - name: Create a temporary directory
+    tempfile:
+      state: directory
+    register: temp_dir
 
-- name: Dump MySQL databases
-  mysql_db:
-    name: "{{ item }}"
-    target: "{{ (backup_dir, day_stamp, inventory_hostname, 'mysql', item) | join('/') }}.sql.gz"
-    state: dump
-    login_host: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-    login_port: "{{ backup_mysql_port }}"
-    login_user: "{{ backup_mysql_user }}"
-    login_password: "{{ backup_mysql_password }}"
-  with_list: "{{ (backup_mysql is string) | ternary([backup_mysql], backup_mysql) }}"
+  - name: Dump MySQL databases
+    mysql_db:
+      name: "{{ item }}"
+      target: "{{ (temp_dir.path, item) | join('/') }}.sql.gz"
+      state: dump
+      login_host: "localhost"
+      login_port: "{{ backup_mysql_port }}"
+      login_user: "{{ backup_mysql_user }}"
+      login_password: "{{ backup_mysql_password }}"
+    with_list: "{{ (backup_mysql is string) | ternary([backup_mysql], backup_mysql) }}"
+    when: temp_dir.path is defined
+
+  - name: Fetch MySQL dumps
+    fetch:
+      src: "{{ (temp_dir.path, item) | join('/') }}.sql.gz"
+      dest: "{{ (backup_dir, day_stamp, inventory_hostname, 'mysql', item) | join('/') }}.sql.gz"
+      flat: yes
+    with_list: "{{ (backup_mysql is string) | ternary([backup_mysql], backup_mysql) }}"
+    when: temp_dir.path is defined
+
+  always:
+    - name: Clean temporary directory
+      file:
+        path: "{{ temp_dir.path }}"
+        state: absent
+      when: temp_dir.path is defined
